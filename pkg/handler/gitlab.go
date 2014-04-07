@@ -179,10 +179,9 @@ func (g *GitlabHandler) Hook(w http.ResponseWriter, r *http.Request) error {
 		return RenderText(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
 
-	_, err = database.GetCommitHash(parsed.After, repo.ID)
-	if err != nil && err != sql.ErrNoRows {
+	if commit, err := database.GetCommitHash(parsed.After, repo.ID); commit.Hash == parsed.After || err != sql.ErrNoRows {
 		fmt.Println("commit already exists")
-		return RenderText(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
+		return RenderText(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
 
 	commit := &Commit{}
@@ -269,8 +268,7 @@ func (g *GitlabHandler) PullRequestHook(p *gogitlab.HookPayload, repo *Repo, use
 		return err
 	}
 
-	_, err = database.GetCommitHash(src.Commit.Id, repo.ID)
-	if err != nil && err != sql.ErrNoRows {
+	if commit, err := database.GetCommitHash(src.Commit.Id, repo.ID); commit.Hash == src.Commit.Id || err != sql.ErrNoRows {
 		fmt.Println("commit already exists")
 		return err
 	}
