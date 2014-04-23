@@ -234,6 +234,7 @@ func setupHandlers() {
 	m.Get("/:host/:owner/:name/params", handler.RepoAdminHandler(handler.RepoParamsForm))
 	m.Get("/:host/:owner/:name/badges", handler.RepoAdminHandler(handler.RepoBadges))
 	m.Get("/:host/:owner/:name/keys", handler.RepoAdminHandler(handler.RepoKeys))
+	m.Post("/:host/:owner/:name/keys", handler.RepoAdminHandler(handler.RepoRegenerateKeys))
 	m.Get("/:host/:owner/:name/delete", handler.RepoAdminHandler(handler.RepoDeleteForm))
 	m.Post("/:host/:owner/:name/delete", handler.RepoAdminHandler(handler.RepoDelete))
 	m.Get("/:host/:owner/:name", handler.RepoHandler(handler.RepoDashboard))
