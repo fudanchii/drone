@@ -20,32 +20,39 @@ model \
 plugin/deploy \
 queue
 PKGS := $(addprefix github.com/drone/drone/pkg/,$(PKGS))
+
+GODEPSPATH := $(PWD)/Godeps/_workspace
+
 .PHONY := test $(PKGS)
 
-all: embed build
+all: build
 
-build:
+build: deps embed
 	go build -o bin/drone -ldflags "-X main.version $(VERSION)dev-$(SHA)" $(SELFPKG)/cmd/drone
 	go build -o bin/droned -ldflags "-X main.version $(VERSION)dev-$(SHA)" $(SELFPKG)/cmd/droned
 
-build-dist: godep
-	godep go build -o bin/drone -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/drone
-	godep go build -o bin/droned -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/droned
+build-dist: PATH := $(GODEPSPATH)/bin:$(GOPATH)/bin:$(PATH)
+build-dist: GOPATH := $(GODEPSPATH):$(GOPATH)
+build-dist: embed
+	go build -o bin/drone -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/drone
+	go build -o bin/droned -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/droned
 
-bump-deps: deps vendor
+bump-deps:
+	go get -u -t -v ./...
+	godep save ./...
 
 deps:
-	go get -u -t -v ./...
-
-vendor: godep
-	git submodule update --init --recursive
-	godep save ./...
+	go get -t -v ./...
 
 
 # Embed static assets
 embed: js rice
 	cd cmd/droned   && rice embed
 	cd pkg/template && rice embed
+
+#rice: GOPATH=$(PWD)/Godeps/_workspace
+rice:
+	go get github.com/GeertJohan/go.rice/rice
 
 js:
 	cd cmd/droned/assets && find js -name "*.js" ! -name '.*' ! -name "main.js" -exec cat {} \; > js/main.js
@@ -62,6 +69,8 @@ install:
 	cd bin && install -t /usr/local/bin droned
 	mkdir -p /var/lib/drone
 
+clean: PATH := $(GODEPSPATH)/bin:$(GOPATH)/bin:$(PATH)
+clean: GOPATH := $(GODEPSPATH):$(GOPATH)
 clean: rice
 	cd cmd/droned   && rice clean
 	cd pkg/template && rice clean
@@ -78,7 +87,7 @@ clean: rice
 
 # creates a debian package for drone
 # to install `sudo dpkg -i drone.deb`
-dpkg:
+dpkg: build-dist
 	mkdir -p deb/drone/usr/local/bin
 	mkdir -p deb/drone/var/lib/drone
 	mkdir -p deb/drone/var/cache/drone
@@ -89,8 +98,3 @@ dpkg:
 run:
 	bin/droned --port=":8080" --datasource="drone.sqlite"
 
-godep:
-	go get github.com/tools/godep
-
-rice:
-	go install github.com/GeertJohan/go.rice/rice
