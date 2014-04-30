@@ -37,7 +37,7 @@ build-dist: embed
 	go build -o bin/drone -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/drone
 	go build -o bin/droned -ldflags "-X main.version $(VERSION)-$(SHA)" $(SELFPKG)/cmd/droned
 
-bump-deps:
+bump-deps: godep
 	go get -u -t -v ./...
 	godep save ./...
 
@@ -98,3 +98,5 @@ dpkg: build-dist
 run:
 	bin/droned --port=":8080" --datasource="drone.sqlite"
 
+godep:
+	go get github.com/tools/godep
