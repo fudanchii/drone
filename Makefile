@@ -46,7 +46,7 @@ embed: js rice
 	cd cmd/droned   && rice embed
 	cd pkg/template && rice embed
 
-$(PKGS): godep
+$(PKGS):
 	go test -v $@
 
 install:
